@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedAI Consensus • Doctor-AI Diagnostic Verification</title>
+  <link rel="stylesheet" href="/web/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="currentColor" stroke-width="2" fill="none"/>
+            <circle cx="16" cy="16" r="6" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-title">MedAI Consensus</h1>
+          <p class="logo-subtitle">Cross-Modal Diagnostic Verification System</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>System Operational</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    
+    <!-- Upload Section -->
+    <section class="upload-section">
+      <div class="section-header">
+        <h2>📤 Upload Medical Case</h2>
+        <p>Provide chest X-ray image and radiology report for cross-verification</p>
+      </div>
+
+      <div class="upload-grid">
+        <!-- Image Upload -->
+        <div class="upload-card">
+            <label for="image" class="upload-label">
+            <div class="upload-icon">🏥</div>
+            <div class="upload-text">
+              <span class="upload-title">Chest X-Ray Image</span>
+              <span class="upload-desc">PNG, JPG • Max 10MB</span>
+            </div>
+          </label>
+          <input type="file" id="image" accept="image/*" class="file-input">
+          <div id="imagePreview" class="image-preview hidden">
+            <img id="previewImg" alt="X-ray preview">
+            <button class="remove-btn" id="removeImage">✕</button>
+          </div>
+        </div>
+
+        <!-- Report Input -->
+        <div class="upload-card report-card">
+          <label class="upload-label">
+            <div class="upload-icon">📋</div>
+            <div class="upload-text">
+              <span class="upload-title">Radiology Report</span>
+              <span class="upload-desc">Copy and paste full report</span>
+            </div>
+          </label>
+          <textarea 
+            id="report" 
+            placeholder="Example:&#10;&#10;FINDINGS: The lungs are clear. No focal consolidation, pleural effusion, or pneumothorax. The cardiac silhouette is normal in size.&#10;&#10;IMPRESSION: No acute cardiopulmonary abnormality."
+            class="report-textarea"
+          ></textarea>
+          <div class="char-count">
+            <span id="charCount">0</span> characters
+          </div>
+        </div>
+      </div>
+
+      <!-- Analyze Button -->
+      <button id="analyzeBtn" class="analyze-btn" disabled>
+        <span class="btn-icon">🔬</span>
+        <span class="btn-text">Analyze Case</span>
+        <span class="btn-loading hidden">
+          <span class="spinner"></span>
+          Analyzing...
+        </span>
+      </button>
+    </section>
+
+    <!-- Results Section -->
+    <section id="resultsSection" class="results-section hidden">
+      
+      <!-- Alert Banner -->
+      <div id="alertBanner" class="alert-banner"></div>
+
+      <!-- Main Results Grid -->
+      <div class="results-grid">
+        
+        <!-- Agreement Score Card -->
+        <div class="result-card score-card">
+          <div class="card-header">
+            <h3>Agreement Analysis</h3>
+            <div class="card-badge" id="statusBadge"></div>
+          </div>
+          
+          <div class="score-display">
+            <div class="score-circle" id="scoreCircle">
+              <svg class="score-svg" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="90" class="score-bg"/>
+                <circle cx="100" cy="100" r="90" class="score-fill" id="scoreFill"/>
+              </svg>
+              <div class="score-value" id="scoreValue">--</div>
+            </div>
+            <div class="score-label">Consensus Score</div>
+          </div>
+
+          <div class="risk-indicator" id="riskIndicator">
+            <div class="risk-icon" id="riskIcon"></div>
+            <div>
+              <div class="risk-level" id="riskLevel">--</div>
+              <div class="risk-desc" id="riskDesc">--</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Analysis Card -->
+        <div class="result-card">
+          <div class="card-header">
+            <h3>🤖 AI Image Analysis</h3>
+          </div>
+          
+          <div class="diagnosis-result">
+            <div class="diagnosis-label">Diagnosis</div>
+            <div class="diagnosis-value" id="aiDiagnosis">--</div>
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="aiConfidenceFill"></div>
+            </div>
+            <div class="confidence-label">
+              Confidence: <span id="aiConfidence">--</span>%
+            </div>
+          </div>
+
+          <div class="findings-list" id="aiFindings"></div>
+        </div>
+
+        <!-- Doctor Report Analysis Card -->
+        <div class="result-card">
+          <div class="card-header">
+            <h3>👨‍⚕️ Report Analysis</h3>
+          </div>
+          
+          <div class="diagnosis-result">
+            <div class="diagnosis-label">Extracted Diagnosis</div>
+            <div class="diagnosis-value" id="doctorDiagnosis">--</div>
+            <div class="confidence-bar">
+              <div class="confidence-fill" id="doctorConfidenceFill"></div>
+            </div>
+            <div class="confidence-label">
+              Analysis Confidence: <span id="doctorConfidence">--</span>%
+            </div>
+          </div>
+
+          <div class="findings-list" id="doctorFindings"></div>
+        </div>
+      </div>
+
+      <!-- Discrepancy Analysis -->
+      <div id="discrepancySection" class="hidden">
+        <div class="result-card discrepancy-card">
+          <div class="card-header">
+            <h3>⚠️ Discrepancy Analysis</h3>
+            <div class="discrepancy-count" id="discrepancyCount">0</div>
+          </div>
+          <div id="discrepancyList" class="discrepancy-list"></div>
+          <div class="discrepancy-summary" id="discrepancySummary"></div>
+        </div>
+      </div>
+
+      <!-- Visual Comparison -->
+      <div class="result-card visual-card">
+        <div class="card-header">
+          <h3>🔍 Visual Analysis</h3>
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-view="heatmap">Heatmap</button>
+            <button class="toggle-btn" data-view="original">Original</button>
+            <button class="toggle-btn" data-view="comparison">Compare</button>
+          </div>
+        </div>
+        
+        <div class="image-container">
+          <div id="heatmapView" class="image-view active">
+            <img id="gradcamImg" alt="GradCAM Heatmap">
+            <div class="image-caption">
+              <strong>GradCAM Attention Map</strong> - Regions of interest highlighted by AI
+            </div>
+          </div>
+          
+          <div id="originalView" class="image-view">
+            <img id="originalImg" alt="Original X-ray">
+            <div class="image-caption">
+              <strong>Original Image</strong> - Uploaded chest X-ray
+            </div>
+          </div>
+          
+          <div id="comparisonView" class="image-view comparison-grid">
+            <div class="comparison-item">
+              <img id="comparisonOriginal" alt="Original">
+              <span>Original</span>
+            </div>
+            <div class="comparison-item">
+              <img id="comparisonHeatmap" alt="Heatmap">
+              <span>AI Analysis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="result-card recommendation-card">
+        <div class="card-header">
+          <h3>💡 Clinical Recommendations</h3>
+        </div>
+        <div id="recommendationContent"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="secondary-btn" id="exportBtn">
+          <span>📄</span> Export Report
+        </button>
+        <button class="secondary-btn" id="newCaseBtn">
+          <span>➕</span> New Case
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>MedAI Consensus System • Research Prototype • Not for clinical use</p>
+    <p class="footer-note">This system is designed to assist, not replace, professional medical judgment</p>
+  </footer>
+
+  <script src="/web/app.js"></script>
+</body>
+</html>
