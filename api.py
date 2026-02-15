@@ -11,6 +11,11 @@ from src.text_diagnosis import extract_text_diagnosis, extract_detailed_findings
 from src.agreement_engine import check_agreement, analyze_discrepancies
 from src.gradcam import generate_gradcam
 
+
+# =========================
+# App Initialization
+# =========================
+
 app = FastAPI(title="Doctor–AI Diagnostic Agreement System")
 
 app.add_middleware(
@@ -20,18 +25,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# =========================
+# Paths
+# =========================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR = os.path.join(BASE_DIR, "web")
 TEMP_DIR = os.path.join(BASE_DIR, "temp")
 
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+# =========================
+# Static Mounts
+# =========================
+
 app.mount("/web", StaticFiles(directory=WEB_DIR), name="web")
 app.mount("/gradcam", StaticFiles(directory=TEMP_DIR), name="gradcam")
+
+
+# =========================
+# Serve Frontend
+# =========================
 
 @app.get("/")
 def serve_ui():
     return FileResponse(os.path.join(WEB_DIR, "index.html"))
+
+
+# =========================
+# Main Analysis Endpoint
+# =========================
 
 @app.post("/analyze")
 async def analyze_case(
@@ -39,15 +62,16 @@ async def analyze_case(
     report: str = Form(...)
 ):
     try:
-        print("Received file:", image.filename, image.content_type)
+        print("Received file:", image.filename)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         image_path = os.path.join(TEMP_DIR, f"{timestamp}_{image.filename}")
 
+        # Save uploaded image
         with open(image_path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
 
-        # Image AI
+        # ================= IMAGE AI =================
         label, conf = predict(image_path)
         detailed_prediction = get_detailed_prediction(image_path)
 
@@ -57,19 +81,19 @@ async def analyze_case(
             "detailed_findings": detailed_prediction
         }
 
-        # Text AI
+        # ================= TEXT AI =================
         text_result = extract_text_diagnosis(report)
         text_result["detailed_findings"] = extract_detailed_findings(report)
 
-        # Agreement
+        # ================= AGREEMENT =================
         agreement = check_agreement(image_result, text_result)
 
-        # Discrepancies
+        # ================= DISCREPANCY =================
         discrepancies = analyze_discrepancies(
             image_result, text_result, report
         )
 
-        # GradCAM (NON-BLOCKING)
+        # ================= GRADCAM =================
         gradcam_url = None
         try:
             gradcam_path = generate_gradcam(image_path)
@@ -77,6 +101,7 @@ async def analyze_case(
         except Exception as e:
             print("GradCAM failed:", e)
 
+        # ================= FINAL RESULT =================
         final_result = {
             **agreement,
             "timestamp": timestamp,
@@ -95,6 +120,11 @@ async def analyze_case(
             status_code=500,
             content={"error": str(e)}
         )
+
+
+# =========================
+# Health Check (Required)
+# =========================
 
 @app.get("/health")
 def health():
